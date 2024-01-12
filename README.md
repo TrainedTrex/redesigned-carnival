@@ -6,7 +6,7 @@ Cesium Demo Example
 > Make sure to CD into container directory before build command
 
 ```docker 
-docker build --tag node-cesium .
+docker build --tag cesium .
 ```
 ## Run the container ##
 
@@ -22,7 +22,7 @@ to run the containers
 ### Example Run Command ###
 
 ```docker 
-docker run -d --name cesium -v C:\Users\<UserName>\Documents\docker\redesigned-carnival:/app/Data --publish 8080:8080 node-cesium
+docker run -d --name cesium -v C:\Users\<UserName>\Documents\docker\redesigned-carnival:/app/Data --publish 8080:8080 cesium
 ```
 
 ## Testing ## 
