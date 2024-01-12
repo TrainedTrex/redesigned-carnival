@@ -1,6 +1,20 @@
 # redesigned-carnival
 Cesium Demo Example
 
+## Description ##
+
+Example cesium build that can be shipped out and serves as a small sample of the capabilites of Cesium and CesiumJS. 
+
+Capabilities: 
+- [x] Cesium Viewer
+- [ ] Ion 3D Tile Integration (Toggleable)
+- [ ] ADSB Exchange Data Integration
+- [ ] TBD
+
+## Usecase ## 
+
+Cesium deployed as a container that can either be stand alone or a front end for a backend service in the future.
+
 ### Example build command ### 
 
 > Make sure to CD into container directory before build command
