@@ -32,7 +32,7 @@ var site = (function() {
             })
         });
 
-        Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI1YTI1YjlhNy00Nzg4LTQzZTAtYWU2NS1mYWU3MmNkZDMwNWUiLCJpZCI6NzAwNDMsImlhdCI6MTYzMzk3NzIzMH0.BwMwrkvZ4m0eaJdCzCfVjftDqC4CuWHw7G3TRRs9N7c'; // Replace with your Cesium ion access token
+        Cesium.Ion.defaultAccessToken = ''; // Replace with your Cesium ion access token
 
         //toggleOrbitPaths();
         //toggleLabels();
@@ -50,7 +50,7 @@ var site = (function() {
         method: 'GET',
         url: 'https://adsbexchange-com1.p.rapidapi.com/v2/lat/39.95020/lon/-75.147646/dist/5/',
         headers: {
-            'X-RapidAPI-Key': 'ac53d16640mshca530b47241a388p1e7d35jsnf8d0881f3e9a',
+            'X-RapidAPI-Key': '',
             'X-RapidAPI-Host': 'adsbexchange-com1.p.rapidapi.com'
         }
         };
