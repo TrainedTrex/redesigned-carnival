@@ -67,37 +67,50 @@ var site = (function() {
     var updateAircraftPositions = async function(viewer) {
         try {
             const adsbData = await _ingestADSBdata(); // Fetch ADS-B data
-            console.log(adsbData);
-
-            adsbData.ac.forEach(ac => {
-                var id = ac.hex; // Using the aircraft's hex as a unique identifier
     
-                // Check if the entity already exists
-                var entity = viewer.entities.getById(id);
-                if (!entity) {
-                    // Create a new entity for the aircraft
-                    entity = viewer.entities.add({
-                        id: id,
-                        position: Cesium.Cartesian3.fromDegrees(ac.lon, ac.lat, ac.alt_baro * 0.3048), // Convert altitude from feet to meters
-                        point: {
-                            pixelSize: 10,
-                            color: Cesium.Color.RED
-                        },
-                        label: {
-                            text: ac.flight.trim(),
-                            eyeOffset: new Cesium.Cartesian3(0, 0, -20),
-                            fillColor: Cesium.Color.WHITE
-                        }
-                    });
+            adsbData.ac.forEach(ac => {
+                // Check if alt_baro is a number or can be converted to one, otherwise set a default value
+                var altitude = parseFloat(ac.alt_baro);
+                if (isNaN(altitude)) {
+                    altitude = 0; // Default altitude, e.g., ground level
                 } else {
-                    // Update the position of an existing entity
-                    entity.position = Cesium.Cartesian3.fromDegrees(ac.lon, ac.lat, ac.alt_baro * 0.3048);
+                    altitude *= 0.3048; // Convert feet to meters
+                }
+    
+                // Validate latitude and longitude
+                if (typeof ac.lat === 'number' && ac.lat >= -90 && ac.lat <= 90 &&
+                    typeof ac.lon === 'number' && ac.lon >= -180 && ac.lon <= 180) {
+    
+                    var id = ac.hex; // Using the aircraft's hex as a unique identifier
+                    var position = Cesium.Cartesian3.fromDegrees(ac.lon, ac.lat, altitude);
+    
+                    var entity = viewer.entities.getById(id);
+                    if (!entity) {
+                        // Create a new entity for the aircraft
+                        viewer.entities.add({
+                            id: id,
+                            position: position,
+                            point: {
+                                pixelSize: 10,
+                                color: Cesium.Color.RED
+                            },
+                            label: {
+                                text: ac.flight.trim(),
+                                eyeOffset: new Cesium.Cartesian3(0, 0, -20),
+                                fillColor: Cesium.Color.WHITE
+                            }
+                        });
+                    } else {
+                        // Update the position of an existing entity
+                        entity.position = position;
+                    }
                 }
             });
         } catch (error) {
             console.error('Error updating aircraft positions:', error);
         }
     };
+    
     
     var _generateSatellites = function() {
 
