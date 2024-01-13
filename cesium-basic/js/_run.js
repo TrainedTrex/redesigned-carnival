@@ -1,6 +1,7 @@
 $(function() {
     //site.init();
-    site.readConfig();
+    //site.readConfig();
     site.initCesium();
+    site.getADSB();
     //site.generateSatellites();
 });

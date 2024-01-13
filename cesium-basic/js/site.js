@@ -31,11 +31,74 @@ var site = (function() {
                 //url: './lib/cesium/Build/Cesium/Assets/Textures/NaturalEarthII'
             })
         });
-        toggleOrbitPaths();
-        toggleLabels();
-        initFilterWindow();
+
+        Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI1YTI1YjlhNy00Nzg4LTQzZTAtYWU2NS1mYWU3MmNkZDMwNWUiLCJpZCI6NzAwNDMsImlhdCI6MTYzMzk3NzIzMH0.BwMwrkvZ4m0eaJdCzCfVjftDqC4CuWHw7G3TRRs9N7c'; // Replace with your Cesium ion access token
+
+        //toggleOrbitPaths();
+        //toggleLabels();
+        //initFilterWindow();        
     };
 
+    var _getADSB = function() {
+        console.log("Getting ADSB Data")
+        updateAircraftPositions(viewer);
+    };
+
+    var _ingestADSBdata = async function() {
+
+        const options = {
+        method: 'GET',
+        url: 'https://adsbexchange-com1.p.rapidapi.com/v2/lat/39.95020/lon/-75.147646/dist/5/',
+        headers: {
+            'X-RapidAPI-Key': 'ac53d16640mshca530b47241a388p1e7d35jsnf8d0881f3e9a',
+            'X-RapidAPI-Host': 'adsbexchange-com1.p.rapidapi.com'
+        }
+        };
+
+        try {
+            var response = await axios.request(options);
+            console.log(response.data);
+            return response.data;
+        } catch (error) {
+            console.error(error);
+        }
+    }; 
+
+    var updateAircraftPositions = async function(viewer) {
+        try {
+            const adsbData = await _ingestADSBdata(); // Fetch ADS-B data
+            console.log(adsbData);
+
+            adsbData.ac.forEach(ac => {
+                var id = ac.hex; // Using the aircraft's hex as a unique identifier
+    
+                // Check if the entity already exists
+                var entity = viewer.entities.getById(id);
+                if (!entity) {
+                    // Create a new entity for the aircraft
+                    entity = viewer.entities.add({
+                        id: id,
+                        position: Cesium.Cartesian3.fromDegrees(ac.lon, ac.lat, ac.alt_baro * 0.3048), // Convert altitude from feet to meters
+                        point: {
+                            pixelSize: 10,
+                            color: Cesium.Color.RED
+                        },
+                        label: {
+                            text: ac.flight.trim(),
+                            eyeOffset: new Cesium.Cartesian3(0, 0, -20),
+                            fillColor: Cesium.Color.WHITE
+                        }
+                    });
+                } else {
+                    // Update the position of an existing entity
+                    entity.position = Cesium.Cartesian3.fromDegrees(ac.lon, ac.lat, ac.alt_baro * 0.3048);
+                }
+            });
+        } catch (error) {
+            console.error('Error updating aircraft positions:', error);
+        }
+    };
+    
     var _generateSatellites = function() {
 
         console.log("In Generate Satellites")
@@ -68,7 +131,7 @@ var site = (function() {
         populateOrbitRegimes();
     };
 
-    var toggleOrbitPaths = function() {
+    var toggleADSB = function() {
         var orbitCheckbox = document.getElementById("Show Orbits");
         var k;
 
@@ -199,6 +262,7 @@ var site = (function() {
         readConfig: _readConfig,
         initCesium: _initCesium,
         generateSatellites: _generateSatellites,
+        getADSB : _getADSB,
     };
 
 })();
