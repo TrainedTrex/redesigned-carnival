@@ -8,6 +8,7 @@ var site = (function() {
     dataSource = new Cesium.CzmlDataSource()
 
     var _readConfig = function() {
+        console.log("READING CONFIG:")
         $.ajax({
             url: './config.json',
             async: false,
@@ -18,6 +19,13 @@ var site = (function() {
     };
 
     var _initCesium = function() {
+
+        _readConfig();
+
+        console.log('Cesium version:', Cesium.VERSION);
+        
+        Cesium.Ion.defaultAccessToken = config.CesiumAPIKey; // Replace with your Cesium ion access token
+
         viewer = new Cesium.Viewer('cesiumContainer', {
             animation: true,
             fullscreenButton: true,
@@ -26,17 +34,21 @@ var site = (function() {
             timeline: true,
             navigationHelpButton: false,
             navigationInstructionsInitiallyVisible: false,
-            imageryProvider: new Cesium.TileMapServiceImageryProvider({
-                url: './node_modules/cesium/Build/Cesium/Assets/Textures/NaturalEarthII'
-                //url: './lib/cesium/Build/Cesium/Assets/Textures/NaturalEarthII'
-            })
+            baseLayer: Cesium.ImageryLayer.fromWorldImagery({
+                style: Cesium.IonWorldImageryStyle.AERIAL_WITH_LABELS,
+              }),
         });
 
-        Cesium.Ion.defaultAccessToken = config.CesiumAPIKey; // Replace with your Cesium ion access token
+        const layers = viewer.scene.imageryLayers;
 
-        //toggleOrbitPaths();
-        //toggleLabels();
-        //initFilterWindow();        
+        const blackMarble = Cesium.ImageryLayer.fromProviderAsync(
+            Cesium.IonImageryProvider.fromAssetId(3812)
+            );
+
+        blackMarble.alpha = 0.25;
+        blackMarble.brightness = 1.5;
+        layers.add(blackMarble);
+ 
     };
 
     var _getADSB = function() {
@@ -48,7 +60,7 @@ var site = (function() {
 
         const options = {
         method: 'GET',
-        url: 'https://adsbexchange-com1.p.rapidapi.com/v2/lat/39.95020/lon/-75.147646/dist/5/',
+        url: 'https://adsbexchange-com1.p.rapidapi.com/v2/lat/39.95020/lon/-75.147646/dist/10/',
         headers: {
             'X-RapidAPI-Key': config.ADSBxAPIKey,
             'X-RapidAPI-Host': 'adsbexchange-com1.p.rapidapi.com'
@@ -66,82 +78,58 @@ var site = (function() {
 
     var updateAircraftPositions = async function(viewer) {
         try {
+
             const adsbData = await _ingestADSBdata(); // Fetch ADS-B data
     
             adsbData.ac.forEach(ac => {
-                // Check if alt_baro is a number or can be converted to one, otherwise set a default value
-                var altitude = parseFloat(ac.alt_baro);
-                if (isNaN(altitude)) {
-                    altitude = 0; // Default altitude, e.g., ground level
-                } else {
-                    altitude *= 0.3048; // Convert feet to meters
-                }
-    
-                // Validate latitude and longitude
-                if (typeof ac.lat === 'number' && ac.lat >= -90 && ac.lat <= 90 &&
-                    typeof ac.lon === 'number' && ac.lon >= -180 && ac.lon <= 180) {
-    
-                    var id = ac.hex; // Using the aircraft's hex as a unique identifier
-                    var position = Cesium.Cartesian3.fromDegrees(ac.lon, ac.lat, altitude);
-    
-                    var entity = viewer.entities.getById(id);
-                    if (!entity) {
-                        // Create a new entity for the aircraft
-                        viewer.entities.add({
-                            id: id,
-                            position: position,
-                            point: {
-                                pixelSize: 10,
-                                color: Cesium.Color.RED
-                            },
-                            label: {
-                                text: ac.flight.trim(),
-                                eyeOffset: new Cesium.Cartesian3(0, 0, -20),
-                                fillColor: Cesium.Color.WHITE
-                            }
-                        });
+                try {
+
+                    // Check if alt_baro is a number or can be converted to one, otherwise set a default value
+                    var altitude = parseFloat(ac.alt_baro);
+                    if (isNaN(altitude)) {
+                        altitude = 0; // Default altitude, e.g., ground level
                     } else {
-                        // Update the position of an existing entity
-                        entity.position = position;
+                        altitude *= 0.3048; // Convert feet to meters
                     }
+        
+                    // Validate latitude and longitude
+                    if (typeof ac.lat === 'number' && ac.lat >= -90 && ac.lat <= 90 &&
+                        typeof ac.lon === 'number' && ac.lon >= -180 && ac.lon <= 180) {
+        
+                        var id = ac.hex; // Using the aircraft's hex as a unique identifier
+                        var position = Cesium.Cartesian3.fromDegrees(ac.lon, ac.lat, altitude);
+        
+                        var entity = viewer.entities.getById(id);
+
+                        if (!entity) {
+                            // Create a new entity for the aircraft
+                            viewer.entities.add({
+                                id: id,
+                                position: position,
+                                point: {
+                                    pixelSize: 10,
+                                    color: Cesium.Color.RED
+                                },
+                                label: {
+                                    text: ac.flight.trim(),
+                                    eyeOffset: new Cesium.Cartesian3(0, 0, 20),
+                                    fillColor: Cesium.Color.WHITE
+                                }
+                            });
+                        } else {
+                            // Update the position of an existing entity
+                            entity.position = position;
+                        }
+                    }
+
+                } catch (error) {
+                    console.error('Error updating aircraft position:', error);
                 }
             });
+
         } catch (error) {
             console.error('Error updating aircraft positions:', error);
         }
-    };
-    
-    
-    var _generateSatellites = function() {
-
-        console.log("In Generate Satellites")
-
-        var propagateURL = new URL("http://"+config.computerName+"/Propagate");
-        var satListURL = new URL("http://"+config.computerName+"/SatList");
-
-        var request = new XMLHttpRequest();
-        request.open("GET", propagateURL, true);
-
-        request.onreadystatechange = function() {
-            console.log("In State change function")
-            if (request.readyState === 4) {
-                
-                czmlString = request.response;
-                console.log(czmlString)
-                console.log("Ready State 4a")
-
-                dataSource.load(czmlString)
-                
-                viewer.dataSources.add(dataSource)
-                console.log("Added czml as a datasource to viewer")
-            }
-        };
-        request.send(null);
-        
-        var x = document.getElementById("filterMenu");
-        x.style.display = "block";
-
-        populateOrbitRegimes();
     };
 
     var toggleADSB = function() {
@@ -274,7 +262,6 @@ var site = (function() {
     return {
         readConfig: _readConfig,
         initCesium: _initCesium,
-        generateSatellites: _generateSatellites,
         getADSB : _getADSB,
     };
 
