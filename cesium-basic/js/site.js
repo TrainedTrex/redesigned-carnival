@@ -32,7 +32,7 @@ var site = (function() {
             })
         });
 
-        Cesium.Ion.defaultAccessToken = ''; // Replace with your Cesium ion access token
+        Cesium.Ion.defaultAccessToken = config.CesiumAPIKey; // Replace with your Cesium ion access token
 
         //toggleOrbitPaths();
         //toggleLabels();
@@ -50,7 +50,7 @@ var site = (function() {
         method: 'GET',
         url: 'https://adsbexchange-com1.p.rapidapi.com/v2/lat/39.95020/lon/-75.147646/dist/5/',
         headers: {
-            'X-RapidAPI-Key': '',
+            'X-RapidAPI-Key': config.ADSBxAPIKey,
             'X-RapidAPI-Host': 'adsbexchange-com1.p.rapidapi.com'
         }
         };
