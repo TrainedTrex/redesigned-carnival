@@ -1,12 +1,14 @@
 # redesigned-carnival
 
+![test](/cesium-basic/favicon.ico)
+
 Cesium Demo Example
 
-![Cesium world view](Isolated.png "Title")
+![Cesium world view](/assets/Cesium_Main.png "Cesium Application")
 
 ## Description
 
-Example cesium build that can be shipped out and serves as a small sample of the capabilites of Cesium and CesiumJS.
+Example cesium build that can be shipped out and serves as a small sample Cesium and CesiumJS capabilities.
 
 Capabilities:
 
@@ -21,6 +23,7 @@ Additional:
 - [x] Dynamic ADSB data legend
 - [ ] Multiple ADSB filter options
 - [ ] Cesium Ion API integration through webpage
+- [x] Compass showing 'North'
 - [ ] Toggleable 3D tile and layers
 - [ ] Zoom too button for 3D tiles
 
@@ -30,12 +33,13 @@ Cesium deployed as a container that can either be stand alone or a front end for
 
 ## How To
 
-This is a step by step guide to getting
+These are the steps needed to get all functionality working.
 
 1. Create Cesium Ion Account
-2. Add Assets from Asset depo to "my assets"
+2. Add imagery assets from Asset depo to "my assets"
+   1. See [this](AssetWalkthrough.md) walkthrough for details if needed
 3. Import Custom NYC Layer and adjust location
-   1. This guide for reference: <https://cesium.com/learn/3d-tiling/ion-tile-photogrammetry/>
+   1. This guide is a good reference: <https://cesium.com/learn/3d-tiling/ion-tile-photogrammetry/>
 4. 
 
 This Guide: <>
@@ -46,11 +50,11 @@ Building the Cesium docker container, continue to next section.
 
 When cloning the repo, there is a config.json.github file. Do the following:
 
-- Rename config.json.github to config.json.
+- Rename config.json.github to config.json
 - Update CesiumAPIKey & ADSBxAPIKey to your key values
 - Save file
 
-> this will 
+> This will allow you to pull data from Cesium Ion and ADSB Exchange correctly
 
 ## Example build command
 
