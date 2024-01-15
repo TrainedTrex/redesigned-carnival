@@ -2,6 +2,8 @@
 
 Cesium Demo Example
 
+![Cesium world view](Isolated.png "Title")
+
 ## Description
 
 Example cesium build that can be shipped out and serves as a small sample of the capabilites of Cesium and CesiumJS.
@@ -16,6 +18,7 @@ Capabilities:
 Additional:
 
 - [x] Toggle for ADSB labels
+- [x] Dynamic ADSB data legend
 - [ ] Multiple ADSB filter options
 - [ ] Cesium Ion API integration through webpage
 - [ ] Toggleable 3D tile and layers
@@ -29,33 +32,49 @@ Cesium deployed as a container that can either be stand alone or a front end for
 
 This is a step by step guide to getting
 
-This Guide: <https://cesium.com/learn/3d-tiling/ion-tile-photogrammetry/>
+1. Create Cesium Ion Account
+2. Add Assets from Asset depo to "my assets"
+3. Import Custom NYC Layer and adjust location
+   1. This guide for reference: <https://cesium.com/learn/3d-tiling/ion-tile-photogrammetry/>
+4. 
 
 This Guide: <>
 
-### Example build command
+Building the Cesium docker container, continue to next section.
 
-> Make sure to CD into container directory before build command
+## Update API Keys
 
-```docker
+When cloning the repo, there is a config.json.github file. Do the following:
+
+- Rename config.json.github to config.json.
+- Update CesiumAPIKey & ADSBxAPIKey to your key values
+- Save file
+
+> this will 
+
+## Example build command
+
+```pwsh
+cd .\cesium-basic\
 docker build --tag cesium .
 ```
 
+> Make sure to CD into container directory before running the build command
+
 ## Run the container
 
-to run the containers
+to run the container use the run command below.
 
 | **Flag** | **Value** |
 | :----- | :----- |
-| -p, --publish | <localport>:8080 |
+| -p, --publish | localport:8080 |
 | --name | desired container name |
-| -v, --volume | <LocalFileLocation>/tleViewer-docker/Data_Folder:app/Data  |
 | -d, --detach | Detatch process from Command Prompt or PowerShell |
 
 ### Example Run Command
 
-```docker
-docker run -d --name cesium -v C:\Users\<UserName>\Documents\docker\redesigned-carnival:/app/Data --publish 8080:8080 cesium
+```pwsh
+docker run -d --name cesium --publish 8080:8080 cesium
 ```
 
 ## Testing

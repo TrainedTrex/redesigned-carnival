@@ -41,11 +41,17 @@ var site = (function() {
         });
 
         CompassRose(true);
+
         try {
             _setUpLayers();
         } catch {
             console.log("Could not set up Layers, please check Cesium ION token")
         }
+
+       
+        initFilterWindow();
+        toggleLabels();
+        
     };
 
     var _setUpLayers = async function(){
@@ -58,11 +64,15 @@ var site = (function() {
         blackMarble.alpha = 0.25;
         blackMarble.brightness = 1.0;
         layers.add(blackMarble);
+        
         /*    
+        // Add in Terrain Data
+        // Currently commented out to showcase some 3D model data
         viewer.scene.setTerrain(
             new Cesium.Terrain(Cesium.CesiumTerrainProvider.fromIonAssetId(3956))
         );
         */
+        
         // Add AGI HQ
         viewer.scene.primitives.add(
             await Cesium.Cesium3DTileset.fromIonAssetId(634533)
@@ -157,6 +167,7 @@ var site = (function() {
                             } else {
                                 // Update the position of an existing entity
                                 entity.position = position;
+                                entity.label.text = labelContent;
                             }
                         }
                     }
@@ -186,6 +197,21 @@ var site = (function() {
                 
             }
         };
+    };
+
+    var addprimative = function(){
+        var center = Cesium.Cartesian3.fromDegrees(-75.147646, 39.95020);
+        var radiusInMeters = 16093.4; // 10 miles in meters
+
+        viewer.entities.add({
+            position: center,
+            ellipsoid: {
+                radii: new Cesium.Cartesian3(radiusInMeters, radiusInMeters, radiusInMeters),
+                material: Cesium.Color.WHITE.withAlpha(0.3), // Semi-transparent red material
+                outline: true, // Optionally, add an outline
+                outlineColor: Cesium.Color.BLACK
+            }
+        });
     };
 
     var toggleLabels = function() {
