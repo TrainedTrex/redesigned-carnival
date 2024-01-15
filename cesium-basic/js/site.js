@@ -6,6 +6,7 @@ var site = (function() {
     var regimes = ['LEO','HEO','MEO','GEO'];
     var czmlString = '';
     dataSource = new Cesium.CzmlDataSource()
+    var compassContainer = document.createElement('div');
 
     var _readConfig = function() {
         console.log("READING CONFIG:")
@@ -39,21 +40,46 @@ var site = (function() {
               }),
         });
 
-        const layers = viewer.scene.imageryLayers;
+        CompassRose(true);
+        try {
+            _setUpLayers();
+        } catch {
+            console.log("Could not set up Layers, please check Cesium ION token")
+        }
+    };
 
+    var _setUpLayers = async function(){
+        
+        console.log("Setting up layers");
+        const layers = viewer.scene.imageryLayers;
         const blackMarble = Cesium.ImageryLayer.fromProviderAsync(
             Cesium.IonImageryProvider.fromAssetId(3812)
             );
-
         blackMarble.alpha = 0.25;
-        blackMarble.brightness = 1.5;
+        blackMarble.brightness = 1.0;
         layers.add(blackMarble);
- 
+        /*    
+        viewer.scene.setTerrain(
+            new Cesium.Terrain(Cesium.CesiumTerrainProvider.fromIonAssetId(3956))
+        );
+        */
+        // Add AGI HQ
+        viewer.scene.primitives.add(
+            await Cesium.Cesium3DTileset.fromIonAssetId(634533)
+        );
+
+        // Add NYC Data
+        viewer.scene.primitives.add(
+            await Cesium.Cesium3DTileset.fromIonAssetId(2422511)
+        );
     };
 
     var _getADSB = function() {
         console.log("Getting ADSB Data")
-        updateAircraftPositions(viewer);
+        setInterval(() => {
+            updateAircraftPositions(viewer);
+        }, 5000); // Update every 5 seconds
+        // Make that a config value in the future. 
     };
 
     var _ingestADSBdata = async function() {
@@ -80,48 +106,64 @@ var site = (function() {
         try {
 
             const adsbData = await _ingestADSBdata(); // Fetch ADS-B data
-    
+            
             adsbData.ac.forEach(ac => {
                 try {
+                    //filters: type: 'tisb_other'
+                    // type: 'adsb_icao'
+                    if (ac.type === 'adsb_icao'){
 
-                    // Check if alt_baro is a number or can be converted to one, otherwise set a default value
-                    var altitude = parseFloat(ac.alt_baro);
-                    if (isNaN(altitude)) {
-                        altitude = 0; // Default altitude, e.g., ground level
-                    } else {
-                        altitude *= 0.3048; // Convert feet to meters
-                    }
-        
-                    // Validate latitude and longitude
-                    if (typeof ac.lat === 'number' && ac.lat >= -90 && ac.lat <= 90 &&
-                        typeof ac.lon === 'number' && ac.lon >= -180 && ac.lon <= 180) {
-        
-                        var id = ac.hex; // Using the aircraft's hex as a unique identifier
-                        var position = Cesium.Cartesian3.fromDegrees(ac.lon, ac.lat, altitude);
-        
-                        var entity = viewer.entities.getById(id);
-
-                        if (!entity) {
-                            // Create a new entity for the aircraft
-                            viewer.entities.add({
-                                id: id,
-                                position: position,
-                                point: {
-                                    pixelSize: 10,
-                                    color: Cesium.Color.RED
-                                },
-                                label: {
-                                    text: ac.flight.trim(),
-                                    eyeOffset: new Cesium.Cartesian3(0, 0, 20),
-                                    fillColor: Cesium.Color.WHITE
-                                }
-                            });
+                        // Check if alt_baro is a number or can be converted to one, otherwise set a default value
+                        var altitude = parseFloat(ac.alt_baro);
+                        if (isNaN(altitude)) {
+                            altitude = 0; // Default altitude, e.g., ground level
                         } else {
-                            // Update the position of an existing entity
-                            entity.position = position;
+                            altitude *= 0.3048; // Convert feet to meters
+                        }
+            
+                        // Validate latitude and longitude
+                        if (typeof ac.lat === 'number' && ac.lat >= -90 && ac.lat <= 90 &&
+                            typeof ac.lon === 'number' && ac.lon >= -180 && ac.lon <= 180) {
+            
+                            var id = ac.hex; // Using the aircraft's hex as a unique identifier
+                            var position = Cesium.Cartesian3.fromDegrees(ac.lon, ac.lat, altitude);
+                            
+                            // Use ac.flight if it exists and is not just whitespace, otherwise use ac.r
+                            var flightLabel = ac.flight && ac.flight.trim() !== '' ? ac.flight.trim() : ac.r;
+                            var labelContent = flightLabel + '\n\n' + (altitude*3.28084).toFixed(2) + ' ft';
+
+                            var entity = viewer.entities.getById(id);
+                            
+                            if (!entity) {
+                                // Create a new entity for the aircraft
+                                viewer.entities.add({
+                                    id: id,
+                                    position: position,
+                                    point: {
+                                        pixelSize: 10,
+                                        color: Cesium.Color.RED
+                                    },
+                                    label: {
+                                        text: labelContent,
+                                        font: 'bold 15px sans-serif', // Adjust font size here
+                                        fillColor: Cesium.Color.WHITE,
+                                        strokeColor: Cesium.Color.BLACK, // Outline color
+                                        strokeWidth: 4,
+                                        style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+                                        eyeOffset: new Cesium.Cartesian3(0, 25, -20),
+                                        verticalOrigin: Cesium.VerticalOrigin.CENTER
+                                    }
+                                });   
+                            } else {
+                                // Update the position of an existing entity
+                                entity.position = position;
+                            }
                         }
                     }
-
+                    else{
+                        // Do not process that data, it doesn't fit the adsb format
+                    }
+                    
                 } catch (error) {
                     console.error('Error updating aircraft position:', error);
                 }
@@ -132,39 +174,16 @@ var site = (function() {
         }
     };
 
-    var toggleADSB = function() {
-        var orbitCheckbox = document.getElementById("Show Orbits");
+    var toggleLayers = function() {
+        var layersCheckbox = document.getElementById("Show Layers");
         var k;
 
-        orbitCheckbox.onchange = function() {
-            console.log("Orbit Check Box Debug")
-            if (orbitCheckbox.checked) {
-                for (k = 0; k < dataSource.entities._entities._array.length; k++) {
-                    dataSource.entities._entities._array[k].path = {
-                        width: 2,
-                        leadTime: 45 * 60,
-                        trailTime: 45 * 60,
-                        material: {
-                            polylineOutline: {
-                                color: {
-                                    rgba: [
-                                        255, 215, 0, 255
-                                    ]
-                                },
-                                outlineColor: {
-                                    rgba: [
-                                        0, 0, 0, 255
-                                    ]
-                                },
-                                outlineWidth: 1
-                            }
-                        }
-                    };
-                }
+        layersCheckbox.onchange = function() {
+            console.log("Layers Check Box Debug")
+            if (layersCheckbox.checked) {
+                
             } else {
-                for (k = 0; k < dataSource.entities._entities._array.length; k++) {
-                    dataSource.entities._entities._array[k].path = {};
-                }
+                
             }
         };
     };
@@ -175,15 +194,12 @@ var site = (function() {
         labelCheckbox.onchange = function() {
             console.log("Labels Check Box")
             if (labelCheckbox.checked) {
-                for (k = 0; k < dataSource.entities._entities._array.length; k++) {
-                    dataSource.entities._entities._array[k]._label.show = true
-                    dataSource.entities._entities._array[k]._label.style = Cesium.LabelStyle.FILL_AND_OUTLINE
-                    dataSource.entities._entities._array[k]._label.outlineWidth = 2
-                    dataSource.entities._entities._array[k]._label.verticalOrigin = Cesium.VerticalOrigin.BOTTOM
+                for (k = 0; k < viewer.entities._entities._array.length; k++) {
+                    viewer.entities._entities._array[k]._label.show = true
                 }
             } else {
-                for (k = 0; k < dataSource.entities._entities._array.length; k++) {
-                    dataSource.entities._entities._array[k]._label.show = false
+                for (k = 0; k < viewer.entities._entities._array.length; k++) {
+                    viewer.entities._entities._array[k]._label.show = false
                 }
             }
         };
@@ -194,70 +210,50 @@ var site = (function() {
         x.style.display = "none";
     };
 
-    var populateOrbitRegimes = function() {
-        var i;
-
-        var parentDiv = document.getElementById("OrbitRegime");
-        console.log("populateOrbitRegimes");
-
-        for (i = 0; i < regimes.length; i++) {
-            var div = document.createElement("div");
-            div.className = "nowrap";
-
-            var input = document.createElement("input");
-            input.id = regimes[i];
-            input.name = regimes[i];
-            input.className = "checkboxes";
-            input.type = "checkbox";
-            input.checked = true;
-
-            var label = document.createElement("label");
-            var labelNode = document.createTextNode(regimes[i] + " Sats");
-            label.appendChild(labelNode);
-
-            div.appendChild(input);
-            div.appendChild(label);
-            parentDiv.appendChild(div);
-
-            createListener(input, regimes[i], "orbitType");
+    // This is a diff way to add a div into the web viewer
+    // It adding an image to act as a compass rose to show where "north" is
+    async function CompassRose(show){
+        if (show) {
+          // Create a container div for the compass rose
+          compassContainer.style.position = 'absolute';
+          compassContainer.style.top = '60px';
+          compassContainer.style.right = '10px';
+          compassContainer.style.padding = '5px'; // Adjust as needed
+          compassContainer.style.border = '1px solid rgba(0, 0, 0, 0.25)'; // Soft border
+          compassContainer.style.borderRadius = '5px'; // Rounded corners
+          compassContainer.style.backgroundColor = 'rgba(255, 255, 255, 0.2)'; // Semi-transparent background
+          viewer.container.appendChild(compassContainer);
+    
+          // Create the compass rose element (as an SVG image)
+          var compassRose = document.createElement('img');
+          compassRose.src = './images/cardinal-point.png';
+          compassRose.style.width = '75px'; // Adjust size as needed
+          compassRose.style.height = 'auto';
+          compassContainer.appendChild(compassRose); // Append compass to the container
+    
+          // Update compass rose rotation based on camera heading
+          // Update compass rose rotation based on camera orientation
+          function updateCompass() {
+            var heading = viewer.camera.heading;
+            var angle = Cesium.Math.toDegrees(heading);
+            compassRose.style.transform = 'rotate(' + -angle + 'deg)';
+          }
+          
+          // Update compass on each rendered frame
+          viewer.scene.postRender.addEventListener(function() {
+              updateCompass();
+          });
+          console.log("added compass rose");
         }
-    };
-
-    var createListener = function(checkbox, parameter, type) {
-        checkbox.onchange = function() {
-            var entities = dataSource.entities._entities._array;
-            var i = 0;
-            if (checkbox.checked) {
-                for (i = 0; i < entities.length; i++) {
-                    if (type == "orbitType") {
-                        check = entities[i]._properties._OrbitType;
-                    } else if (type == "missionType") {
-                        check = entities[i].missionType;
-                    } else {
-                        check = entities[i].country;
-                    }
-
-                    if (check == parameter) {
-                        entities[i].show = true;
-                    }
-                }
-            } else {
-                for (i = 0; i < entities.length; i++) {
-                    if (type == "orbitType") {
-                        check = entities[i]._properties._OrbitType;
-                    } else if (type == "missionType") {
-                        check = entities[i].missionType;
-                    } else {
-                        check = entities[i].country;
-                    }
-
-                    if (check == parameter) {
-                        entities[i].show = false;
-                    }
-                }
+        else {
+            // Remove all child elements
+            while (compassContainer.firstChild) {
+                compassContainer.removeChild(compassContainer.firstChild);
             }
-        };
-    };
+            console.log("removed compass rose");
+        }
+    }
+
 
     return {
         readConfig: _readConfig,
