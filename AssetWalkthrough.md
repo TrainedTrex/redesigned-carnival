@@ -8,7 +8,7 @@
 
 You will need to add assets to your account's asset list to be able to access them from CesiumJS. This is a walkthrough of how to do that.
 
-The supplied code already has some assets listed, default Cesium assets from the Asset depo will have a constant asset ID# so there is no need to change the code for them. Any custom 3D tiles or image layers that are uploaded by the user WILL have a unique asset ID# so they might need to be changed in the code. 
+The supplied code already has some assets listed, default Cesium assets from the Asset depo will have a constant asset ID# so there is no need to change the code for them. Any custom 3D tiles or image layers that are uploaded by the user WILL have a unique asset ID# so they might need to be changed in the code.
 
 - Log into [Cesium Ion](https://ion.cesium.com/)
 - Navigate to Asset Depo

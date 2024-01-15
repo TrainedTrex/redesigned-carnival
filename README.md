@@ -40,11 +40,12 @@ These are the steps needed to get all functionality working.
    1. See [this](AssetWalkthrough.md) walkthrough for details if needed
 3. Import Custom NYC Layer and adjust location
    1. This guide is a good reference: <https://cesium.com/learn/3d-tiling/ion-tile-photogrammetry/>
-4. 
+   2. You may need to adjust asset ID# for any custom layers/3D models in site.js
+4. Update API Keys in config.json (see below)
+5. Build container
+6. Enjoy
 
-This Guide: <>
-
-Building the Cesium docker container, continue to next section.
+Continue to next section.
 
 ## Update API Keys
 
