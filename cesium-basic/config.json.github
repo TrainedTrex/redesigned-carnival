@@ -1,5 +1,5 @@
 {
     "CesiumAPIKey": "CesiumAPIKey",
     "ADSBxAPIKey": "ADSBxAPIKey",
-    "useConfig": false
+    "useConfig": true
 }
